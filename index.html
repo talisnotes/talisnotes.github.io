@@ -9,6 +9,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<script>
+  try { const t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
 <style>
   :root {
     --bg: #f7f4ff;
@@ -26,8 +29,9 @@
     --line: #e4dcf7;
     --gold: #f5b83d;
     --shadow: rgba(108, 71, 217, 0.16);
-    --cloud-opacity: 1;
-    --cloud-filter: none;
+    --is-day: 1;
+    --sky-a: #bfd4ff;
+    --sky-b: #dccbff;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
@@ -46,15 +50,16 @@
       --blue: #8fb0ff;
       --line: #342c48;
       --shadow: rgba(0, 0, 0, 0.35);
-      --cloud-opacity: 0;
-      --cloud-filter: saturate(0.8);
+      --is-day: 0;
+      --sky-a: #1d2a52;
+      --sky-b: #30245a;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --bg: #14111d; --sky-from: #1d2140; --sky-to: #2a1f45; --surface: #201b2d; --surface-soft: rgba(32, 27, 45, 0.78);
     --ink: #f1edfa; --muted: #b6aecb; --faint: #8d85a3; --accent: #b79bff; --accent-2: #9a7cf5; --accent-soft: #2e2645;
-    --blue: #8fb0ff; --line: #342c48; --shadow: rgba(0, 0, 0, 0.35); --cloud-opacity: 0; --cloud-filter: saturate(0.8); color-scheme: dark;
+    --blue: #8fb0ff; --line: #342c48; --shadow: rgba(0, 0, 0, 0.35); --is-day: 0; --sky-a: #1d2a52; --sky-b: #30245a; color-scheme: dark;
   }
 
   * { box-sizing: border-box; }
@@ -71,27 +76,87 @@
   h1, h2, h3 { font-family: "Bricolage Grotesque", "Figtree", system-ui, sans-serif; text-wrap: balance; margin: 0; }
   .wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding-inline: 20px; }
 
-  /* ---- The sky: a soft band with drifting 3D clouds, like the app's library ---- */
+  /* ---- The sky: the app's library sky (blue into lilac, fading into the page) with its own
+     clouds, day and night, drifting slowly to and fro; tap one and it bursts into mist. ---- */
   .sky {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(180deg, var(--sky-from) 0%, var(--sky-to) 62%, var(--bg) 100%);
+    background: linear-gradient(180deg, transparent 30%, var(--bg) 100%), linear-gradient(120deg, var(--sky-a), var(--sky-b));
     padding-block: 28px 0;
   }
-  .cloud { position: absolute; pointer-events: none; height: auto; opacity: var(--cloud-opacity); filter: var(--cloud-filter); animation: drift 26s ease-in-out infinite alternate; }
-  .c1 { width: 250px; top: 50px; left: -50px; }
-  .c2 { width: 330px; top: 8px; left: 36%; animation-duration: 32s; animation-delay: -8s; }
-  .c3 { width: 230px; top: 64px; right: -30px; animation-duration: 28s; animation-delay: -14s; }
-  .c4 { width: 120px; top: 150px; left: 20%; animation-duration: 22s; }
-  .c5 { width: 110px; top: 196px; right: 22%; animation-duration: 24s; animation-delay: -5s; }
+  /* Drift: eased back and forth, as the app's DriftingCloud (distance and period per cloud). */
+  .cloud { position: absolute; z-index: 1; animation: drift var(--p, 16s) ease-in-out infinite alternate; animation-delay: var(--delay, 0s); }
+  @keyframes drift { from { transform: translateX(calc(var(--d, 10px) * -1)); } to { transform: translateX(var(--d, 10px)); } }
+  .face { position: relative; cursor: pointer; transition: opacity 1100ms cubic-bezier(.23,1,.32,1), transform 1100ms cubic-bezier(.23,1,.32,1), filter 1100ms cubic-bezier(.23,1,.32,1); }
+  .face img { display: block; width: 100%; height: auto; -webkit-user-drag: none; user-select: none; }
+  .face .night { position: absolute; inset: 0; }
+  .face .day { opacity: var(--is-day); }
+  .face .night { opacity: calc(1 - var(--is-day)); }
+  /* Burst: it swells a touch, blurs and fades into its mist (the app's 200 ms), then forms again slowly. */
+  .face.gone { opacity: 0; transform: scale(1.08); filter: blur(8px); transition-duration: 200ms; pointer-events: none; }
+  .c1 { width: 250px; top: 46px; left: -50px; --d: 8px; --p: 14s; }
+  .c2 { width: 330px; top: 4px; left: 36%; --d: 14px; --p: 20s; --delay: -6s; }
+  .c3 { width: 230px; top: 60px; right: -30px; --d: 8px; --p: 12s; --delay: -3s; }
+  .c4 { width: 120px; top: 126px; left: 20%; --d: 5px; --p: 23s; --delay: -9s; }
+  .c5 { width: 110px; top: 128px; right: 23%; --d: 4px; --p: 26s; --delay: -4s; }
   .sparkle { position: absolute; width: 12px; height: 12px; color: #fff; opacity: 0.9; }
-  @keyframes drift { from { transform: translateX(-10px); } to { transform: translateX(14px); } }
   @media (prefers-reduced-motion: reduce) { .cloud { animation: none; } html { scroll-behavior: auto; } }
+  /* The header's own layers let taps through to the clouds, except on the things in them. */
+  nav, .hero, .hero > div { pointer-events: none; }
+  /* Only the buttons and the picture catch taps: the headline and lines span the full width and
+     would sit in front of a low cloud. */
+  nav a, nav button, .hero a, .device { pointer-events: auto; }
+  nav, .hero { z-index: 4; }
+
+  /* The mist of a burst cloud, drawn over everything (it never blocks a tap). */
+  #mist { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
+
+  /* "Tap me": a moment after the page opens, a finger's tap pulses on the big cloud. */
+  .tap-hint { position: absolute; left: 44%; top: 66%; width: 0; height: 0; pointer-events: none; opacity: 0; }
+  .tap-hint.on { animation: hint-in 260ms cubic-bezier(.23,1,.32,1) forwards; }
+  .tap-hint.off { animation: hint-out 220ms ease forwards; }
+  .tap-hint .ring { position: absolute; left: -12px; top: -12px; width: 24px; height: 24px; border-radius: 50%; border: 2.5px solid var(--accent-2); background: color-mix(in srgb, var(--accent-2) 12%, transparent); opacity: 0; animation: ripple 1500ms cubic-bezier(.23,1,.32,1) infinite; }
+  .tap-hint .ring.r2 { animation-delay: 220ms; }
+  .tap-hint .ring.r3 { animation-delay: 440ms; }
+  @keyframes hint-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: none; } }
+  @keyframes hint-out { from { opacity: 1; } to { opacity: 0; transform: scale(0.94); } }
+  @keyframes ripple { 0% { opacity: 0; transform: scale(0.4); } 12% { opacity: 0.9; } 75%, 100% { opacity: 0; transform: scale(3.2); } }
+  @media (prefers-reduced-motion: reduce) { .tap-hint .ring { animation: none; opacity: 0.6; } }
 
   nav { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.2rem; }
   .brand img { width: 36px; height: 36px; }
-  .navlinks { display: flex; gap: 6px; flex-wrap: wrap; }
+  .navlinks { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+
+  /* The theme switch: one of our clouds, with the sun peeking out from behind it by day and the
+     moon by night. Tapped, the cloud bursts into mist (as the sky clouds do) while the sun and
+     moon quickly fade one into the other, and a cloud forms again in the new sky. */
+  .sky-switch {
+    position: relative; flex: none; width: 74px; height: 46px; padding: 0; border: 0; background: none; cursor: pointer;
+    -webkit-tap-highlight-color: transparent; border-radius: 16px;
+    transition: transform 160ms cubic-bezier(.23,1,.32,1);
+  }
+  .sky-switch:active { transform: scale(0.94); }
+  .sky-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .orb { position: absolute; right: 9px; top: 3px; width: 22px; height: 22px; border-radius: 50%; transition: opacity 180ms ease; }
+  .sun { background: radial-gradient(circle at 35% 35%, #fff6c9, #ffd45c 58%, #f7a93b); box-shadow: 0 0 12px 4px rgba(255, 200, 80, 0.5);
+         opacity: var(--is-day); }
+  .moon { background: radial-gradient(circle at 40% 40%, #ffffff, #e6e1ff 70%); filter: drop-shadow(0 0 6px rgba(220, 210, 255, 0.7));
+          -webkit-mask: radial-gradient(circle at 78% 28%, transparent 8px, #000 8.5px); mask: radial-gradient(circle at 78% 28%, transparent 8px, #000 8.5px);
+          opacity: calc(1 - var(--is-day)); }
+  .twinkle { position: absolute; width: 7px; height: 7px; color: #fff; opacity: calc(1 - var(--is-day)); transform: scale(calc(1 - var(--is-day))); transition: opacity 300ms ease 260ms, transform 360ms cubic-bezier(.23,1,.32,1) 260ms; }
+  .tw1 { left: 6px; top: 4px; } .tw2 { left: 34px; top: 0; width: 5px; height: 5px; transition-delay: 340ms; }
+  .switch-cloud { position: absolute; left: 0; bottom: 0; width: 60px; transition: opacity 260ms cubic-bezier(.23,1,.32,1), transform 260ms cubic-bezier(.23,1,.32,1), filter 260ms; }
+  .switch-cloud img { display: block; width: 100%; height: auto; }
+  .switch-cloud .night { position: absolute; inset: 0; }
+  .switch-cloud .day { opacity: var(--is-day); }
+  .switch-cloud .night { opacity: calc(1 - var(--is-day)); }
+  .switch-cloud.gone { opacity: 0; transform: scale(1.08); filter: blur(6px); transition-duration: 200ms; }
+  .switch-cloud.forming { opacity: 0; transform: scale(0.96) translateY(2px); transition: none; }
+  @media (prefers-reduced-motion: reduce) { .orb, .twinkle, .switch-cloud { transition: none !important; } }
+
+  /* While the theme turns, the page's colours ease over with it instead of flipping at once. */
+  html.turning, html.turning *:not(.orb):not(.twinkle):not(.switch-cloud):not(.face):not(.tap-hint):not(.tap-hint *) { transition: background-color 420ms ease, color 420ms ease, border-color 420ms ease, opacity 420ms ease, box-shadow 420ms ease !important; }
   .navlinks a { color: var(--ink); text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 8px 12px; border-radius: 12px; }
   .navlinks a:hover { background: var(--surface-soft); }
 
@@ -184,14 +249,18 @@
 
   @media (max-width: 600px) {
     .navlinks { display: none; }
+    .sky-switch { margin-left: auto; }
     .hero { padding-block: 96px 40px; }
-    .c2 { width: 200px; left: 40%; }
+    .c1 { width: 160px; top: 78px; left: -40px; }
+    .c2 { width: 170px; top: 64px; left: 38%; }
+    .c3 { width: 130px; top: 128px; right: -24px; }
     .c4, .c5 { display: none; }
     section { padding-block: 56px; }
   }
 </style>
 </head>
 <body>
+<canvas id="mist" aria-hidden="true"></canvas>
 
 <!-- One cloud drawing, reused: overlapping puffs with a white top and a soft lilac belly. -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -201,11 +270,11 @@
 </svg>
 
 <header class="sky">
-  <img class="cloud c1" src="img/cloud-mid.webp" alt="">
-  <img class="cloud c2" src="img/cloud-big.webp" alt="">
-  <img class="cloud c3" src="img/cloud-right.webp" alt="">
-  <img class="cloud c4" src="img/cloud-small1.webp" alt="">
-  <img class="cloud c5" src="img/cloud-small2.webp" alt="">
+  <div class="cloud c1"><div class="face"><img class="day" src="img/cloud-mid-day.webp" alt=""><img class="night" src="img/cloud-mid-night.webp" alt=""></div></div>
+  <div class="cloud c2"><div class="face"><img class="day" src="img/cloud-big-day.webp" alt=""><img class="night" src="img/cloud-big-night.webp" alt=""><div class="tap-hint" id="tapHint" aria-hidden="true"><span class="ring"></span><span class="ring r2"></span><span class="ring r3"></span></div></div></div>
+  <div class="cloud c3"><div class="face"><img class="day" src="img/cloud-right-day.webp" alt=""><img class="night" src="img/cloud-right-night.webp" alt=""></div></div>
+  <div class="cloud c4"><div class="face"><img class="day" src="img/cloud-small1-day.webp" alt=""><img class="night" src="img/cloud-small1-night.webp" alt=""></div></div>
+  <div class="cloud c5"><div class="face"><img class="day" src="img/cloud-small2-day.webp" alt=""><img class="night" src="img/cloud-small2-night.webp" alt=""></div></div>
   <svg class="sparkle" style="top:40px;left:18%"><use href="#sparkle"/></svg>
   <svg class="sparkle" style="top:120px;right:12%;width:9px;height:9px"><use href="#sparkle"/></svg>
   <svg class="sparkle" style="top:30px;right:34%;width:8px;height:8px"><use href="#sparkle"/></svg>
@@ -220,6 +289,13 @@
         <a href="#support">Support</a>
         <a href="#contact">Contact</a>
       </div>
+      <button class="sky-switch" id="skySwitch" type="button" aria-label="Switch to dark mode">
+        <span class="orb sun" aria-hidden="true"></span>
+        <span class="orb moon" aria-hidden="true"></span>
+        <svg class="twinkle tw1" aria-hidden="true"><use href="#sparkle"/></svg>
+        <svg class="twinkle tw2" aria-hidden="true"><use href="#sparkle"/></svg>
+        <span class="switch-cloud" id="switchCloud" aria-hidden="true"><img class="day" src="img/cloud-right-day.webp" alt=""><img class="night" src="img/cloud-right-night.webp" alt=""></span>
+      </button>
     </nav>
 
     <div class="hero">
@@ -417,6 +493,193 @@
   const kofi = document.getElementById("kofi");
   if (KOFI_URL) kofi.href = KOFI_URL;
   else { kofi.removeAttribute("href"); kofi.setAttribute("aria-disabled", "true"); }
+
+  // ---- Mist: the app's cloud puff (CloudPuff.kt), drawn on one canvas over the page ----
+  // A burst cloud melts into dozens of soft wisps on a jittered grid over its area; the whole
+  // puff rises and swells while each wisp drifts outwards on its own clock, then thins away.
+  const mistCanvas = document.getElementById("mist");
+  const mctx = mistCanvas.getContext("2d");
+  const easeOut = (t) => { // cubic-bezier(.23, 1, .32, 1), the app's EaseOutStrong
+    let x = t;
+    for (let i = 0; i < 6; i++) {
+      const cx = 3 * 0.23, bx = 3 * (0.32 - 0.23) - cx, ax = 1 - cx - bx;
+      const fx = ((ax * x + bx) * x + cx) * x - t;
+      const dx = (3 * ax * x + 2 * bx) * x + cx;
+      if (Math.abs(dx) < 1e-6) break;
+      x -= fx / dx;
+    }
+    const cy = 3, by = 3 * (1 - 1) - cy, ay = 1 - cy - by;
+    return Math.min(1, Math.max(0, ((ay * x + by) * x + cy) * x));
+  };
+  const easeInOutSoft = (t) => t * t * (3 - 2 * t);
+  const hash = (i, salt) => { const x = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453; return x - Math.floor(x); };
+  const TONES = 4;
+  function mist(w, h, smooth) {
+    let r = Math.min(Math.max(Math.min(w, h) * 0.42, 24), 58) * (smooth ? 1.35 : 1);
+    let step = r * 0.72;
+    while (Math.ceil(w / step) * Math.ceil(h / step) > 56) { r *= 1.12; step = r * 0.72; }
+    const cols = Math.max(1, Math.ceil(w / step));
+    const rows = h < r * 1.6 ? 1 : Math.max(1, Math.ceil(h / step));
+    const reach = Math.hypot(w / 2, h / 2);
+    const out = [];
+    let i = 0;
+    for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
+      i++;
+      const u = (col + 0.5) / cols - 0.5, v = (row + 0.5) / rows - 0.5;
+      if (cols > 2 && rows > 2 && u * u + v * v > 0.42 && hash(i, 9) < 0.7) continue;
+      const x = u * w * 0.9 + (hash(i, 1) - 0.5) * step * 0.6;
+      const y = v * h * 0.9 + (hash(i, 2) - 0.5) * step * 0.6;
+      const len = Math.max(1, Math.hypot(x, y));
+      const spread = r * (0.25 + 0.45 * hash(i, 3)) * (len / reach);
+      const dx = (x / len) * spread + (hash(i, 4) - 0.5) * r * 0.3;
+      const dy = (y / len) * spread * 0.5 - r * 0.35 * hash(i, 10);
+      const size = r * (0.8 + 0.45 * hash(i, 5)) * (row === 0 && rows > 1 ? 1.15 : 1);
+      const tone = Math.min(TONES - 1, Math.max(0, Math.round((v + 0.5) * (TONES - 1) + (hash(i, 6) - 0.5))));
+      out.push({ x, y, dx: smooth ? dx * 0.5 : dx, dy: smooth ? dy * 0.5 : dy, r: size,
+                 delay: hash(i, 7) * (smooth ? 0.04 : 0.12), weight: smooth ? 1 : 0.75 + 0.25 * hash(i, 8), tone });
+    }
+    return out;
+  }
+  // The soft dot every wisp is drawn with, tinted per tone (made once per colour).
+  const dots = new Map();
+  function dot(rgb) {
+    if (dots.has(rgb)) return dots.get(rgb);
+    const size = 96, c = document.createElement("canvas");
+    c.width = c.height = size;
+    const g = c.getContext("2d"), half = size / 2;
+    const grad = g.createRadialGradient(half, half, 0, half, half, half);
+    for (let k = 0; k <= 8; k++) {
+      const st = k / 8, a = Math.exp(-(st * st) / (2 * 0.44 * 0.44)) * (1 - st * st * st);
+      grad.addColorStop(st, `rgba(${rgb},${a.toFixed(3)})`);
+    }
+    g.fillStyle = grad;
+    g.fillRect(0, 0, size, size);
+    dots.set(rgb, c);
+    return c;
+  }
+  const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+  // The app's tones: white wisps leaning lilac lower down by day, one pale even mist by night.
+  function tones(dark, vivid = false) {
+    if (dark) {
+      const top = mix(mix([0x3a, 0x33, 0x5e], [0xb7, 0xa6, 0xee], 0.4), [255, 255, 255], 0.45);
+      return { tints: Array(TONES).fill(top.join(",")), shade: null, peak: vivid ? 0.38 : 0.26, smooth: true, hold: 0, underside: 0.4, vivid };
+    }
+    // Vivid: faintly lilac wisps with a deeper lilac belly that holds a moment (the app's deletion mist).
+    const white = [255, 255, 255], belly = [0xe3, 0xe8, 0xfc], accent = [0x7a, 0x4e, 0xd6];
+    // On the light sky the switch's small puff leans further into lilac, or it vanishes into the sky.
+    const lilac = [0xc9, 0xb6, 0xff];
+    const top = vivid ? mix(white, lilac, 0.4) : white;
+    const low = vivid ? mix(white, lilac, 0.8) : mix(white, belly, 0.7);
+    return { tints: [...Array(TONES)].map((_, i) => mix(top, low, i / (TONES - 1)).join(",")), shade: mix(belly, accent, vivid ? 0.55 : 0.22).join(","),
+             peak: vivid ? 1 : 0.95, smooth: false, hold: vivid ? 0.18 : 0, underside: vivid ? 0.7 : 0.4, vivid };
+  }
+  const puffs = [];
+  /** Plays a burst's mist over [rect] (page coordinates), over [ms]. */
+  function burst(rect, dark, ms = 640, vivid = false) {
+    const t = tones(dark, vivid);
+    puffs.push({ cx: rect.left + rect.width / 2, cy: rect.top + rect.height / 2, w: rect.width, h: rect.height,
+                 wisps: mist(rect.width, rect.height, t.smooth), t, start: performance.now(), ms });
+    if (puffs.length === 1) requestAnimationFrame(drawMist);
+  }
+  function drawMist(now) {
+    const dpr = window.devicePixelRatio || 1;
+    const W = innerWidth, H = innerHeight;
+    if (mistCanvas.width !== Math.round(W * dpr) || mistCanvas.height !== Math.round(H * dpr)) { mistCanvas.width = Math.round(W * dpr); mistCanvas.height = Math.round(H * dpr); }
+    mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    mctx.clearRect(0, 0, W, H);
+    for (let k = puffs.length - 1; k >= 0; k--) {
+      const p = puffs[k], t = (now - p.start) / p.ms;
+      if (t >= 1) { puffs.splice(k, 1); continue; }
+      if (t <= 0) continue;
+      const cx = p.cx - scrollX, cy = p.cy - scrollY;
+      const lift = -Math.min(p.h, p.w) * (p.t.vivid ? 0.22 : 0.28) * easeOut(t);
+      const swell = 1 + (p.t.vivid ? 0.14 : 0.22) * easeOut(t);
+      for (let pass = p.t.shade ? 0 : 1; pass <= 1; pass++) for (const w of p.wisps) {
+        if (pass === 0 && w.tone < TONES / 2) continue;
+        const local = Math.min(1, Math.max(0, (t - w.delay) / (1 - w.delay)));
+        if (local <= 0) continue;
+        const go = easeOut(local);
+        const a = p.t.peak * w.weight * easeOut(Math.min(1, local / 0.12)) * (1 - easeInOutSoft(Math.min(1, Math.max(0, (local - p.t.hold) / (1 - p.t.hold)))));
+        if (a <= 0.004) continue;
+        const x = cx + w.x * swell + w.dx * go;
+        const y = cy + w.y * swell + w.dy * go + lift + (pass === 0 ? w.r * 0.3 : 0);
+        const r = w.r * (p.t.vivid ? 0.82 + 0.36 * go : 0.9 + 0.45 * go);
+        mctx.globalAlpha = Math.min(1, pass === 0 ? a * p.t.underside : a);
+        mctx.drawImage(dot(pass === 0 ? p.t.shade : p.t.tints[w.tone]), x - r, y - r, 2 * r, 2 * r);
+      }
+    }
+    mctx.globalAlpha = 1;
+    if (puffs.length) requestAnimationFrame(drawMist);
+    else mctx.clearRect(0, 0, W, H);
+  }
+  const pageRect = (el) => { const b = el.getBoundingClientRect(); return { left: b.left + scrollX, top: b.top + scrollY, width: b.width, height: b.height }; };
+
+  // ---- Light and dark: the visitor's own setting until they choose; the choice is remembered ----
+  const root = document.documentElement;
+  const sky = document.getElementById("skySwitch");
+  const systemDark = matchMedia("(prefers-color-scheme: dark)");
+  const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : systemDark.matches;
+  const label = () => sky.setAttribute("aria-label", isDark() ? "Switch to light mode" : "Switch to dark mode");
+  label();
+  systemDark.addEventListener("change", label);
+
+  // ---- Sky clouds: tap one and it bursts (as in the app), forming again 4 seconds later ----
+  const hint = document.getElementById("tapHint");
+  let hintGone = false;
+  function hideHint() {
+    if (hintGone) return;
+    hintGone = true;
+    clearTimeout(hintTimer);
+    if (hint.classList.contains("on")) { hint.classList.replace("on", "off"); }
+  }
+  document.querySelectorAll(".face").forEach((face) => {
+    face.addEventListener("click", (e) => {
+      // Only the cloud itself, not the empty corners of its box; not while it's away.
+      const b = face.getBoundingClientRect();
+      const dx = (e.clientX - (b.left + b.width / 2)) / (b.width / 2), dy = (e.clientY - (b.top + b.height / 2)) / (b.height / 2);
+      if (dx * dx + dy * dy > 1 || face.classList.contains("gone")) return;
+      hideHint();
+      burst(pageRect(face), isDark());
+      face.classList.add("gone");
+      setTimeout(() => face.classList.remove("gone"), 200 + 4000);
+    });
+  });
+  // A moment after the page opens, rings ripple on the big cloud (every visit, until one is tapped).
+  const hintTimer = setTimeout(() => {
+    if (hintGone) return;
+    hint.classList.add("on");
+    // It shows for a few pulses, then steps aside on its own.
+    setTimeout(() => { if (!hintGone && hint.classList.contains("on")) hint.classList.replace("on", "off"); }, 5200);
+  }, 1500);
+
+  // ---- The switch: its cloud bursts while the sun and moon fade over, then forms again ----
+  const switchCloud = document.getElementById("switchCloud");
+  let turning, forming;
+  sky.addEventListener("click", () => {
+    const wasDark = isDark();
+    const next = wasDark ? "light" : "dark";
+    // Its mist is in the colours of the sky being switched to, so it shows against it: white on
+    // the night sky; on the light sky the app's fuller lilac mist (pale night mist vanished there).
+    const r = pageRect(switchCloud);
+    // A touch larger than the little cloud itself, so the burst reads at this size.
+    burst(wasDark ? { left: r.left - r.width * 0.2, top: r.top - r.height * 0.2, width: r.width * 1.4, height: r.height * 1.4 } : r, !wasDark, 560, wasDark);
+    switchCloud.classList.remove("forming");
+    switchCloud.classList.add("gone");
+    root.classList.add("turning");
+    root.dataset.theme = next;
+    try { localStorage.setItem("theme", next); } catch (e) {}
+    label();
+    clearTimeout(turning);
+    clearTimeout(forming);
+    turning = setTimeout(() => root.classList.remove("turning"), 650);
+    // The new sky's cloud gathers again once the old one has gone.
+    forming = setTimeout(() => {
+      switchCloud.classList.add("forming");
+      switchCloud.classList.remove("gone");
+      void switchCloud.offsetWidth;
+      switchCloud.classList.remove("forming");
+    }, 380);
+  });
 
   // Each way to write opens an email with its own subject and a start to fill in.
   // The address is put together here rather than written in the page, so bots that harvest
