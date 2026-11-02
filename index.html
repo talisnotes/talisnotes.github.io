@@ -378,7 +378,7 @@
           <h2>Write to me</h2>
           <p>I read every message. Pick what it's about and your email app opens with a start already written.</p>
         </div>
-        <div class="address"><span id="email">arielmz12344@gmail.com</span><button class="copy" type="button" id="copy">Copy</button></div>
+        <div class="address"><span id="email" class="email-slot"><noscript>arielmz12344 at gmail dot com</noscript></span><button class="copy" type="button" id="copy" hidden>Copy</button></div>
       </div>
       <div class="ways">
         <a class="way" data-subject="Working together" data-body="Hi Ariel,&#10;&#10;I'm [your name], [your role] at [company or school].&#10;&#10;I'd like to talk about [what you have in mind].&#10;&#10;You can reach me at [phone or email].&#10;&#10;Thanks,&#10;[your name]">
@@ -407,7 +407,7 @@
 <footer>
   <div class="wrap">
     <span>© 2026 Tali's Notes</span>
-    <span><a href="privacy.html">Privacy policy</a> · Contact: <span class="email">arielmz12344@gmail.com</span></span>
+    <span><a href="privacy.html">Privacy policy</a> · Contact: <span class="email email-slot"><noscript>arielmz12344 at gmail dot com</noscript></span></span>
   </div>
 </footer>
 
@@ -419,12 +419,17 @@
   else { kofi.removeAttribute("href"); kofi.setAttribute("aria-disabled", "true"); }
 
   // Each way to write opens an email with its own subject and a start to fill in.
-  const EMAIL = "arielmz12344@gmail.com";
+  // The address is put together here rather than written in the page, so bots that harvest
+  // addresses from page text don't find it; people see it as usual (and without scripts, the
+  // spelled-out fallback in each slot).
+  const EMAIL = ["arielmz12344", ["gmail", "com"].join(".")].join("@");
+  document.querySelectorAll(".email-slot").forEach(s => (s.textContent = EMAIL));
   document.querySelectorAll(".way").forEach(a => {
     a.href = "mailto:" + EMAIL + "?subject=" + encodeURIComponent(a.dataset.subject) + "&body=" + encodeURIComponent(a.dataset.body);
   });
   // Not everyone has an email app set up, so the address can be copied too.
   const copy = document.getElementById("copy");
+  copy.hidden = false;
   copy.addEventListener("click", () => {
     const done = () => { copy.textContent = "Copied"; setTimeout(() => (copy.textContent = "Copy"), 1600); };
     if (navigator.clipboard) navigator.clipboard.writeText(EMAIL).then(done, () => window.getSelection().selectAllChildren(document.getElementById("email")));

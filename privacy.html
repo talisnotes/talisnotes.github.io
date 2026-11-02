@@ -63,7 +63,11 @@
   <p>If this policy changes, the new version will be posted on this page with a new date.</p>
 
   <h2>Contact</h2>
-  <p>Questions: arielmz12344@gmail.com</p>
+  <p>Questions: <span class="email-slot"><noscript>arielmz12344 at gmail dot com</noscript></span></p>
+  <script>
+    // Put together here so address-harvesting bots don't find it in the page text.
+    document.querySelectorAll(".email-slot").forEach(s => (s.textContent = ["arielmz12344", ["gmail", "com"].join(".")].join("@")));
+  </script>
 </main>
 </body>
 </html>
