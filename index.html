@@ -4,41 +4,373 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tali's Notes</title>
+<meta name="description" content="Tali's Notes is a free handwriting notes app for Android tablets and the pen, made for students: smooth ink, lecture PDFs, perfect shapes, voice memos and backups to your own Google Drive.">
+<link rel="icon" href="logo-120.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
 <style>
-  :root { --bg: #f6f3ff; --card: #ffffff; --ink: #1f1a2e; --muted: #5d5670; --accent: #7a4ed6; --line: #e4dcf7; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #16131f; --card: #211c2e; --ink: #f1edfa; --muted: #b3aac6; --accent: #c4a8ff; --line: #352d47; } }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  main { max-width: 42rem; margin: 0 auto; padding: 56px 20px 72px; }
-  h1 { font-size: 2.2rem; line-height: 1.15; margin: 0 0 8px; }
-  .lede { color: var(--muted); font-size: 1.15rem; margin: 0 0 32px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px 24px; margin: 0 0 16px; }
-  h2 { font-size: 1.1rem; margin: 0 0 6px; }
-  p { margin: 0 0 8px; }
+  :root {
+    --bg: #f7f4ff;
+    --sky-from: #c9d8ff;
+    --sky-to: #e6dcff;
+    --surface: #ffffff;
+    --surface-soft: rgba(255, 255, 255, 0.72);
+    --ink: #1f1a2e;
+    --muted: #5d5670;
+    --faint: #8a83a0;
+    --accent: #6c47d9;
+    --accent-2: #8f6cf0;
+    --accent-soft: #ece5ff;
+    --blue: #3f6fe0;
+    --line: #e4dcf7;
+    --gold: #f5b83d;
+    --shadow: rgba(108, 71, 217, 0.16);
+    --cloud-opacity: 1;
+    --cloud-filter: none;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14111d;
+      --sky-from: #1d2140;
+      --sky-to: #2a1f45;
+      --surface: #201b2d;
+      --surface-soft: rgba(32, 27, 45, 0.78);
+      --ink: #f1edfa;
+      --muted: #b6aecb;
+      --faint: #8d85a3;
+      --accent: #b79bff;
+      --accent-2: #9a7cf5;
+      --accent-soft: #2e2645;
+      --blue: #8fb0ff;
+      --line: #342c48;
+      --shadow: rgba(0, 0, 0, 0.35);
+      --cloud-opacity: 0;
+      --cloud-filter: saturate(0.8);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14111d; --sky-from: #1d2140; --sky-to: #2a1f45; --surface: #201b2d; --surface-soft: rgba(32, 27, 45, 0.78);
+    --ink: #f1edfa; --muted: #b6aecb; --faint: #8d85a3; --accent: #b79bff; --accent-2: #9a7cf5; --accent-soft: #2e2645;
+    --blue: #8fb0ff; --line: #342c48; --shadow: rgba(0, 0, 0, 0.35); --cloud-opacity: 0; --cloud-filter: saturate(0.8); color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  img { max-width: 100%; height: auto; display: block; }
   a { color: var(--accent); }
-  footer { margin-top: 40px; color: var(--muted); font-size: 0.95rem; }
+  h1, h2, h3 { font-family: "Bricolage Grotesque", "Figtree", system-ui, sans-serif; text-wrap: balance; margin: 0; }
+  .wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding-inline: 20px; }
+
+  /* ---- The sky: a soft band with drifting 3D clouds, like the app's library ---- */
+  .sky {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, var(--sky-from) 0%, var(--sky-to) 62%, var(--bg) 100%);
+    padding-block: 28px 0;
+  }
+  .cloud { position: absolute; pointer-events: none; height: auto; opacity: var(--cloud-opacity); filter: var(--cloud-filter); animation: drift 26s ease-in-out infinite alternate; }
+  .c1 { width: 250px; top: 50px; left: -50px; }
+  .c2 { width: 330px; top: 8px; left: 36%; animation-duration: 32s; animation-delay: -8s; }
+  .c3 { width: 230px; top: 64px; right: -30px; animation-duration: 28s; animation-delay: -14s; }
+  .c4 { width: 120px; top: 150px; left: 20%; animation-duration: 22s; }
+  .c5 { width: 110px; top: 196px; right: 22%; animation-duration: 24s; animation-delay: -5s; }
+  .sparkle { position: absolute; width: 12px; height: 12px; color: #fff; opacity: 0.9; }
+  @keyframes drift { from { transform: translateX(-10px); } to { transform: translateX(14px); } }
+  @media (prefers-reduced-motion: reduce) { .cloud { animation: none; } html { scroll-behavior: auto; } }
+
+  nav { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.2rem; }
+  .brand img { width: 36px; height: 36px; }
+  .navlinks { display: flex; gap: 6px; flex-wrap: wrap; }
+  .navlinks a { color: var(--ink); text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 8px 12px; border-radius: 12px; }
+  .navlinks a:hover { background: var(--surface-soft); }
+
+  .hero { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr; gap: 36px; padding-block: 120px 56px; text-align: center; }
+  .eyebrow { color: var(--accent); font-weight: 700; font-size: 1rem; margin: 0 0 10px; }
+  .hero h1 { font-size: clamp(2.6rem, 6.4vw, 4.6rem); line-height: 1.02; letter-spacing: -0.02em; font-weight: 800; }
+  .hero .lede { color: var(--muted); font-size: clamp(1.08rem, 2vw, 1.3rem); max-width: 36rem; margin: 18px auto 28px; }
+  .ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 700;
+    padding: 14px 22px; border-radius: 16px; transition: transform 160ms cubic-bezier(.23,1,.32,1), box-shadow 160ms;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: linear-gradient(135deg, var(--accent-2), var(--accent)); color: #fff; box-shadow: 0 10px 24px var(--shadow); }
+  .btn-primary:hover { box-shadow: 0 14px 30px var(--shadow); }
+  .btn-quiet { background: var(--accent-soft); color: var(--accent); }
+  .btn svg { width: 20px; height: 20px; flex: none; }
+  .small { color: var(--faint); font-size: 0.92rem; margin-top: 14px; }
+
+  .device {
+    position: relative; margin: 0 auto; max-width: 980px; width: 100%;
+    background: var(--surface); border-radius: 28px; padding: 10px;
+    box-shadow: 0 30px 60px -20px var(--shadow), 0 0 0 1px var(--line);
+  }
+  .device img { border-radius: 20px; width: 100%; height: auto; aspect-ratio: 5 / 3; object-fit: cover; }
+
+  section { padding-block: 72px; }
+  .section-head { max-width: 40rem; margin: 0 0 36px; }
+  .label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.8rem; font-weight: 700; color: var(--accent); margin: 0 0 8px; }
+  .section-head h2 { font-size: clamp(1.9rem, 3.6vw, 2.6rem); line-height: 1.1; font-weight: 800; }
+  .section-head p { color: var(--muted); margin: 12px 0 0; font-size: 1.08rem; }
+
+  /* Features: a picture beside its words, alternating sides. */
+  .feature { display: grid; grid-template-columns: 1fr; gap: 28px; align-items: center; margin-bottom: 64px; }
+  .feature:last-child { margin-bottom: 0; }
+  .feature .shot { border-radius: 22px; overflow: hidden; box-shadow: 0 24px 48px -22px var(--shadow), 0 0 0 1px var(--line); background: var(--surface); }
+  .feature h3 { font-size: 1.6rem; line-height: 1.15; font-weight: 800; margin-bottom: 10px; }
+  .feature p { color: var(--muted); margin: 0 0 12px; }
+  .ticks { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 8px; }
+  .ticks li { display: flex; gap: 10px; align-items: baseline; }
+  .ticks li::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); transform: translateY(-2px); }
+  @media (min-width: 860px) {
+    .feature { grid-template-columns: 1.25fr 1fr; gap: 56px; }
+    .feature.flip .shot { order: 2; }
+  }
+
+  .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 22px 22px 20px; min-width: 0; }
+  .card h3 { font-size: 1.15rem; font-weight: 700; font-family: "Figtree", sans-serif; margin-bottom: 6px; }
+  .card p { color: var(--muted); margin: 0; font-size: 0.98rem; }
+  .icon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); margin-bottom: 14px; }
+  .icon svg { width: 22px; height: 22px; }
+
+  /* About and support: one calm panel, the maker's note beside the Ko-fi card. */
+  .panel {
+    background: linear-gradient(160deg, var(--surface) 0%, var(--accent-soft) 140%);
+    border: 1px solid var(--line); border-radius: 28px; padding: clamp(24px, 4vw, 44px);
+    display: grid; grid-template-columns: 1fr; gap: 32px;
+  }
+  @media (min-width: 860px) { .panel { grid-template-columns: 1.4fr 1fr; align-items: start; } }
+  .panel h2 { font-size: clamp(1.7rem, 3vw, 2.2rem); font-weight: 800; margin-bottom: 14px; }
+  .panel p { color: var(--muted); margin: 0 0 12px; max-width: 38rem; }
+  .signature { color: var(--ink); font-weight: 600; }
+  .support { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 24px; box-shadow: 0 18px 40px -24px var(--shadow); }
+  .support h3 { font-size: 1.35rem; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .support h3 svg { width: 24px; height: 24px; color: #ff5e7e; }
+  .support p { color: var(--muted); font-size: 0.98rem; margin: 0 0 18px; }
+  .support .btn { width: 100%; justify-content: center; }
+  .support .note { font-size: 0.85rem; color: var(--faint); margin: 12px 0 0; text-align: center; }
+  .btn[aria-disabled="true"] { opacity: 0.55; pointer-events: none; }
+
+  footer { border-top: 1px solid var(--line); padding-block: 28px 40px; color: var(--muted); font-size: 0.95rem; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: space-between; align-items: center; }
+  footer a { color: var(--muted); }
+  .email { user-select: all; }
+
+  @media (max-width: 600px) {
+    .navlinks { display: none; }
+    .hero { padding-block: 96px 40px; }
+    .c2 { width: 200px; left: 40%; }
+    .c4, .c5 { display: none; }
+    section { padding-block: 56px; }
+  }
 </style>
 </head>
 <body>
+
+<!-- One cloud drawing, reused: overlapping puffs with a white top and a soft lilac belly. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="sparkle" viewBox="0 0 12 12"><path fill="currentColor" d="M6 0l1.3 4.7L12 6l-4.7 1.3L6 12 4.7 7.3 0 6l4.7-1.3z"/></symbol>
+  </defs>
+</svg>
+
+<header class="sky">
+  <img class="cloud c1" src="img/cloud-mid.webp" alt="">
+  <img class="cloud c2" src="img/cloud-big.webp" alt="">
+  <img class="cloud c3" src="img/cloud-right.webp" alt="">
+  <img class="cloud c4" src="img/cloud-small1.webp" alt="">
+  <img class="cloud c5" src="img/cloud-small2.webp" alt="">
+  <svg class="sparkle" style="top:40px;left:18%"><use href="#sparkle"/></svg>
+  <svg class="sparkle" style="top:120px;right:12%;width:9px;height:9px"><use href="#sparkle"/></svg>
+  <svg class="sparkle" style="top:30px;right:34%;width:8px;height:8px"><use href="#sparkle"/></svg>
+
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="#"><img src="logo-120.png" alt="" width="36" height="36">Tali's Notes</a>
+      <div class="navlinks">
+        <a href="#features">Features</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#about">About</a>
+        <a href="#support">Support</a>
+      </div>
+    </nav>
+
+    <div class="hero">
+      <div>
+        <p class="eyebrow">Free · No ads · No account</p>
+        <h1>Handwritten notes,<br>made for the pen</h1>
+        <p class="lede">A notes app for Android tablets and the S Pen, built for students. Write on lecture slides, sketch diagrams with shapes that snap clean, and keep everything backed up in your own Google Drive.</p>
+        <div class="ctas">
+          <a class="btn btn-primary" href="https://play.google.com/store/apps/details?id=com.tali.notes">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.6 2.3c-.3.3-.5.8-.5 1.4v16.6c0 .6.2 1.1.5 1.4l9.3-9.7-9.3-9.7zm10.5 8.5l2.7-2.8-11.4-6.4c-.4-.2-.8-.3-1.1-.2l9.8 9.4zm0 2.4L5.3 22.6c.3.1.7 0 1.1-.2l11.4-6.4-2.7-2.8zm5.6-2.4l-2.6-1.5-3 3.1 3 3.1 2.6-1.5c.9-.5.9-1.7 0-2.2z"/></svg>
+            Get it on Google Play
+          </a>
+          <a class="btn btn-quiet" href="#features">See what it does</a>
+        </div>
+        <p class="small">For Android tablets and phones · English, Español, Français, Português, العربية, עברית</p>
+      </div>
+      <div class="device"><img src="img/notes.webp" alt="A notebook page in Tali's Notes: beam calculations in handwriting with a drawn simply supported beam, its loads and a moment diagram" width="1400" height="840"></div>
+    </div>
+  </div>
+</header>
+
 <main>
-  <h1>Tali's Notes</h1>
-  <p class="lede">A handwriting notes app for Android tablets and the S Pen, made for students.</p>
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="label">Features</p>
+        <h2>Everything a lecture needs, nothing in the way</h2>
+        <p>It started as an app for one civil-engineering student, so it's built around how students really take notes: slides, problem sheets, sketches and formulas.</p>
+      </div>
 
-  <div class="card">
-    <h2>Write like on paper</h2>
-    <p>A4 pages or an endless canvas, pens, highlighter, shapes that snap clean, lecture PDFs to write on, pictures, typed text and voice memos.</p>
-  </div>
-  <div class="card">
-    <h2>Your notes stay yours</h2>
-    <p>Everything is saved on your tablet. Backups go only where you choose: a file on the tablet, or your own Google Drive or OneDrive. Nothing is sent to us.</p>
-  </div>
-  <div class="card">
-    <h2>Google Drive backup</h2>
-    <p>If you turn it on, the app keeps a backup of your notebooks in a “Tali's Notes” folder in your own Google Drive. It can only see the files it created there, never anything else in your Drive.</p>
-  </div>
+      <div class="feature">
+        <div class="shot"><img src="img/pdf.webp" alt="A lecture PDF with handwritten notes, a highlighted line and a check mark" width="1400" height="840" loading="lazy"></div>
+        <div>
+          <h3>Write straight on your slides</h3>
+          <p>Open a lecture PDF from any app and write over it. Pages stay sharp at any zoom, and you can save it as a notebook or just look.</p>
+          <ul class="ticks">
+            <li>Fineliner, fountain pen, pencil, calligraphy and highlighter</li>
+            <li>Dotted and dashed lines, three thicknesses per pen</li>
+            <li>Export back to PDF, at the quality you choose</li>
+          </ul>
+        </div>
+      </div>
 
-  <footer>
-    <p><a href="privacy.html">Privacy policy</a> · Contact: arielmz12344@gmail.com</p>
-  </footer>
+      <div class="feature flip">
+        <div class="shot"><img src="img/shapes.webp" alt="The Shapes panel with basic shapes and civil-engineering symbols such as supports, loads and moments" width="1400" height="840" loading="lazy"></div>
+        <div>
+          <h3>Shapes that snap clean</h3>
+          <p>Draw a rough box, hold the pen still for a moment, and it becomes a perfect one. Lines lock to tidy angles, and shapes line up with each other as you move them.</p>
+          <ul class="ticks">
+            <li>Shapes for eleven subjects, from beams and circuits to economics graphs</li>
+            <li>Drag a shape's dots to reshape it, with live angles and lengths</li>
+            <li>Save your own shapes and reuse them</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature">
+        <div class="shot"><img src="img/library.webp" alt="The library: notebooks with coloured spines, a PDF, folders in the sidebar and clouds across the top" width="1400" height="875" loading="lazy"></div>
+        <div>
+          <h3>A calm place for every course</h3>
+          <p>Folders inside folders, a colour for each, starred notebooks for the ones you open every day, and a search that finds them fast.</p>
+          <ul class="ticks">
+            <li>A4 pages or an endless canvas, portrait or landscape</li>
+            <li>Grid, dots, lines, Cornell and engineering paper, or your own</li>
+            <li>Light and dark, in four colour families</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid3" style="margin-top:56px">
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
+          <h3>Voice memos</h3>
+          <p>Record the lecturer beside the page you're writing on, and play it back right there.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z"/><path d="M14 6l3 3"/></svg></div>
+          <h3>Made for the S Pen</h3>
+          <p>Low-latency ink, palm-friendly touch, and the pen's button to erase or switch between your starred pens.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a7 7 0 0 1 12-5l2 2M19 12a7 7 0 0 1-12 5l-2-2"/><path d="M19 4v5h-5M5 20v-5h5"/></svg></div>
+          <h3>Backups that just happen</h3>
+          <p>Your notebooks back themselves up to your Google Drive moments after you close them. A new tablet restores everything in one tap.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8" /></svg></div>
+          <h3>Lasso, copy, lock</h3>
+          <p>Circle anything to move, resize, recolour or mirror it. Lock a diagram so a stray palm can't nudge it.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 16l-5-5-8 8"/></svg></div>
+          <h3>Pictures and photos</h3>
+          <p>Drop in a photo of the whiteboard, crop it, and write right over it.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"/></svg></div>
+          <h3>Typed text too</h3>
+          <p>For the times a keyboard is quicker: text boxes you can size, move and write around.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacy" style="padding-top:24px">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="label">Privacy</p>
+        <h2>Your notes stay yours</h2>
+      </div>
+      <div class="grid3">
+        <div class="card">
+          <h3>Saved on your tablet</h3>
+          <p>Everything you write lives in the app on your device. There's no account to make, and no ads or tracking.</p>
+        </div>
+        <div class="card">
+          <h3>Backups go where you choose</h3>
+          <p>A file on the tablet, or your own Google Drive, OneDrive or Dropbox. Nothing is ever sent to us.</p>
+        </div>
+        <div class="card">
+          <h3>Google Drive, kept separate</h3>
+          <p>If you turn on Drive backup, the app keeps your notebooks in a “Tali's Notes” folder in your own Drive. It can only see the files it created there, never anything else.</p>
+        </div>
+      </div>
+      <p style="margin-top:20px;color:var(--muted)">The full details are in the <a href="privacy.html">privacy policy</a>.</p>
+    </div>
+  </section>
+
+  <section id="about" style="padding-top:24px">
+    <div class="wrap">
+      <div class="panel">
+        <div>
+          <p class="label">About</p>
+          <!-- Ariel: replace this note with your own words. -->
+          <h2>Made by one person, for one student first</h2>
+          <p>Tali's Notes began as an app for Tali, a civil-engineering student who writes her notes with an S Pen. It grew one request at a time, from her and then from the first testers, into the app it is now.</p>
+          <p>It's free, it has no ads, and it doesn't collect your data. I build it in my spare time and read every message, so if something's missing or broken, write to me.</p>
+          <p class="signature">— Ariel</p>
+        </div>
+        <div class="support" id="support">
+          <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.6 5c2.1 0 3.5 1.1 4.4 2.5C11.9 6.1 13.3 5 15.4 5 19 5 21 8.6 19.6 11.8 17.5 16.4 12 21 12 21z"/></svg>Support the app</h3>
+          <p>The app is free and will stay free. If it helps you through a semester and you'd like to say thanks, a coffee keeps the work going.</p>
+          <a class="btn btn-primary" id="kofi" href="" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8z"/><path d="M17 9h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3v2M12 3v2"/></svg>
+            Buy me a coffee on Ko‑fi
+          </a>
+          <p class="note">Completely optional. Nothing in the app is locked.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Tali's Notes</span>
+    <span><a href="privacy.html">Privacy policy</a> · Contact: <span class="email">arielmz12344@gmail.com</span></span>
+  </div>
+</footer>
+
+<script>
+  // The Ko-fi page's address. Until it's set, the button rests (greyed, not clickable).
+  const KOFI_URL = "https://ko-fi.com/arielmz12344";
+  const kofi = document.getElementById("kofi");
+  if (KOFI_URL) kofi.href = KOFI_URL;
+  else { kofi.removeAttribute("href"); kofi.setAttribute("aria-disabled", "true"); }
+</script>
 </body>
 </html>
